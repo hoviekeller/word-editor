@@ -19,7 +19,7 @@ var config = {
   "menu": {
     "custom": {
       "title": "File",
-      "items": "newdocument openfile separator save saveas reset separator print preview separator separator support reload"
+      "items": "newdocument openfile separator save saveas reset separator print preview darkmode"
     }
   },
   "toolbar": `
@@ -222,6 +222,25 @@ var config = {
         config.editor.shortcuts.add("Ctrl+S", '', config.listener.fileio.save);
         config.editor.setContent(config.download.content, {"format": "raw"});
         /*  */
+        config.editor.ui.registry.addIcon("reset", `
+          <svg width="16" height="16" viewBox="0 0 48 48">
+            <path d="M 9.8212753,13.365952 H 34.12766 V 20.455317 L 44.25532,10.327657 34.12766,0.199997 V 7.2893585 H 3.744681 V 22.987232 H 9.8212753 Z"/>
+            <path d="M 38.178723,34.634044 13.872338,34.634037 13.872339,27.544678 3.744681,37.672337 13.872339,47.8 13.87234,40.710639 44.255317,40.710637 44.255318,25.012763 38.178724,25.012764 Z"/>
+          </svg>
+        `);
+        /*  */
+        config.editor.ui.registry.addIcon("darkmode", `
+          <svg width="16" height="16" viewBox="0 0 122.8799 122.8799">
+            <path d="M 63.550085,1.4875858 A 60.101027,60.101027 0 0 0 3.45,61.587666 60.101027,60.101027 0 0 0 63.550085,121.6899 60.101027,60.101027 0 0 0 119.56373,83.196612 50.463617,50.463617 0 0 1 102.0998,86.352622 50.463617,50.463617 0 0 1 51.637166,35.887862 50.463617,50.463617 0 0 1 65.189815,1.5691534 60.101027,60.101027 0 0 0 63.550085,1.4875858 Z"/>
+          </svg>
+        `);
+        /*  */
+        config.editor.ui.registry.addIcon("disk", `
+          <svg width="16" height="16" viewBox="0 0 18 18">
+            <path d="M14,0 L2,0 C0.9,0 0,0.9 0,2 L0,16 C0,17.1 0.9,18 2,18 L16,18 C17.1,18 18,17.1 18,16 L18,4 L14,0 L14,0 Z M9,16 C7.3,16 6,14.7 6,13 C6,11.3 7.3,10 9,10 C10.7,10 12,11.3 12,13 C12,14.7 10.7,16 9,16 L9,16 Z M12,6 L2,6 L2,2 L12,2 L12,6 L12,6 Z"/>
+          </svg>
+        `);
+        /*  */
         config.editor.ui.registry.addMenuItem("saveas", {
           "icon": "save",
           "text": "SaveAs",
@@ -230,13 +249,13 @@ var config = {
         /*  */
         config.editor.ui.registry.addMenuItem("reset", {
           "text": "Reset",
-          "icon": "restore-draft",
+          "icon": "reset",
           "onAction": config.listener.reset
         });
         /*  */
         config.editor.ui.registry.addMenuItem("save", {
           "text": "Save",
-          "icon": "checkmark",
+          "icon": "disk",
           "shortcut": "Ctrl+S",
           "onAction": config.listener.save
         });      
@@ -246,6 +265,17 @@ var config = {
           "shortcut": "Ctrl+O",
           "text": "Open file (.html)",
           "onAction": config.listener.fileio.open
+        });        
+        /*  */
+        config.editor.ui.registry.addMenuItem("darkmode", {
+          "icon": "darkmode",
+          "text": "Dark Mode",
+          "onAction": function () {
+            var dark = document.getElementById("dark");
+            if (dark) {
+              dark.click();
+            }
+          }
         });
       }
     }
