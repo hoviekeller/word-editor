@@ -1,0 +1,96 @@
+body {
+	border: 0;
+	margin: 0;
+	padding: 0;
+	color: #555;
+	width: 100%;
+	height: 100vh;
+  overflow: hidden;
+	font-family: arial, sans-serif;
+	background: url("resources/loader.svg") no-repeat center center;
+	background-size: 64px;
+}
+
+.container {
+	margin: 0;
+	border: 0;
+	padding: 0;
+	width: 100%;
+	height: 100%;
+}
+
+html[theme='default'] .container {
+	background-color: #fff;
+}
+
+html[theme='dark'] .container {
+	background-color: #222f3e;
+}
+
+.container textarea {
+	visibility: hidden;
+}
+
+.tox-tinymce {
+	margin: auto;
+	min-height: 100vh;
+	max-height: 100vh;
+	border-color: transparent !important;
+}
+
+html[context="popup"] .tox-tinymce {
+  min-height: unset;
+}
+
+div[class*="tox-statusbar"] {
+	font-size: 10px !important;
+}
+
+.toolbar {
+	top: 3px;
+	right: 3px;
+	z-index: 11;
+	position: fixed;
+}
+
+.toolbar table {
+  border-spacing: 1px 0;
+}
+
+.toolbar table tr td {
+  padding: 0;
+  width: 48px;
+  height: 34px;
+  cursor: pointer;
+  user-select: none;
+  text-align: center;
+	border-radius: 3px;
+	transition: 300ms ease all;
+}
+
+.toolbar table tr td svg {
+  pointer-events: none;
+  vertical-align: middle;
+}
+
+html[theme='default'] .toolbar table tr td svg {
+	fill: #666666;
+}
+
+html[theme='dark'] .toolbar table tr td svg {
+	fill: #c1c1c1;
+}
+
+.toolbar table tr td:hover {
+  background-color: #dee0e2;
+}
+
+@media (max-width: 500px) {
+  .toolbar {
+    display: none;
+  }
+}
+
+html[context="webapp"] .toolbar {
+  display: none;
+}
