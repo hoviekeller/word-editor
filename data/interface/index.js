@@ -178,6 +178,7 @@ var config = {
     "load": function () {
       config.interface.initialize();
       /*  */
+      tinyMCE.baseURL = chrome.runtime.getURL("/data/interface/vendor/");
       tinyMCE.init({
         "theme": "silver",
         "branding": false,
@@ -195,8 +196,7 @@ var config = {
         "content_css": config.interface.theme,
         "menu": {"custom": config.menu.custom},
         "save_onsavecallback": config.listener.fileio.save,
-        "images_upload_handler": config.listener.fileio.image,
-        "document_base_url": chrome.runtime.getURL("/data/interface/vendor/")
+        "images_upload_handler": config.listener.fileio.image
       });
     },
     "on": {
