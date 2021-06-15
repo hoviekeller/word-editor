@@ -13,7 +13,7 @@ You can install this app as a PWA on your mobile device, moreover, it is availab
 Chrome: https://chrome.google.com/webstore/detail/word-editor/fehbhooigaekgcjecehkiflmflofpdke  
 Opera: https://addons.opera.com/en/extensions/details/word-editor/  
 Firefox: https://addons.mozilla.org/en-US/firefox/addon/word-editor-addon/  
-Edge:   
+Edge: https://microsoftedge.microsoft.com/addons/detail/kejomhoioebidhkgmipamekhipddmlmn  
 
 Webapp & PWA: https://webbrowsertools.com/word-editor/
 
