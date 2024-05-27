@@ -1,8 +1,9 @@
 This add-on uses the following third-party open-source libraries:
 
-TinyMCE:
-1) vendor/tinymce.js: https://github.com/tinymce/tinymce-dist/archive/refs/tags/5.8.1.zip >> tinymce-dist-5.8.1
-4) vendor/icons (.*): https://github.com/tinymce/tinymce-dist/archive/refs/tags/5.8.1.zip >> tinymce-dist-5.8.1 >> icons
-2) vendor/skins (.*): https://github.com/tinymce/tinymce-dist/archive/refs/tags/5.8.1.zip >> tinymce-dist-5.8.1 >> skins
-3) vendor/themes (.*): https://github.com/tinymce/tinymce-dist/archive/refs/tags/5.8.1.zip >> tinymce-dist-5.8.1 >> themes
-4) vendor/plugins (.*): https://github.com/tinymce/tinymce-dist/archive/refs/tags/5.8.1.zip >> tinymce-dist-5.8.1 >> plugins
+TinyMCE (v7.1.1):
+1. vendor/tinymce.min.js: https://cdn.jsdelivr.net/npm/tinymce@7.1.1/tinymce.min.js
+2. vendor/icons (.*): https://registry.npmjs.org/tinymce/-/tinymce-7.1.1.tgz >> tinymce-7.1.1 >> package >> icons
+3. vendor/skins (.*): https://registry.npmjs.org/tinymce/-/tinymce-7.1.1.tgz >> tinymce-7.1.1 >> package >> skins
+4. vendor/themes (.*): https://registry.npmjs.org/tinymce/-/tinymce-7.1.1.tgz >> tinymce-7.1.1 >> package >> themes
+5. vendor/models (.*): https://registry.npmjs.org/tinymce/-/tinymce-7.1.1.tgz >> tinymce-7.1.1 >> package >> models
+5. vendor/plugins (.*): https://registry.npmjs.org/tinymce/-/tinymce-7.1.1.tgz >> tinymce-7.1.1 >> package >> plugins
