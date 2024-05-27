@@ -1,22 +1,22 @@
 {
-  "version": "0.1.2",
-  "manifest_version": 2,
+  "version": "0.1.4",
+  "manifest_version": 3,
   "name": "Word Editor",
   "offline_enabled": true,
-  "short_name": "word-editor",
-  "permissions": ["storage", "downloads", "contextMenus"],
   "homepage_url": "https://mybrowseraddon.com/word-editor.html",
   "description": "A free & easy-to-use word editor extension for your browser.",
-  "background": {
-    "persistent": false,
-    "scripts": [
-      "lib/config.js", 
-      "lib/chrome.js",
-      "lib/runtime.js",
-      "lib/common.js"
-    ]
+  "commands": {
+    "_execute_action": {}
   },
-  "browser_action": {
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "storage", 
+    "downloads", 
+    "contextMenus"
+  ],
+  "action": {
     "default_title": "Word Editor",
     "default_icon": {
       "16": "data/icons/16.png",
