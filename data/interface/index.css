@@ -2,12 +2,12 @@ body {
 	border: 0;
 	margin: 0;
 	padding: 0;
-	color: #555;
+	color: #333;
 	width: 100%;
 	height: 100vh;
   overflow: hidden;
-	font-family: arial, sans-serif;
-	background: url("resources/loader.svg") no-repeat center center;
+	font-family: system-ui, sans-serif;
+	background: url('resources/loader.svg') no-repeat center center;
 	background-size: 64px;
 }
 
@@ -19,31 +19,37 @@ body {
 	height: 100%;
 }
 
-html[theme='default'] .container {
-	background-color: #fff;
-}
-
-html[theme='dark'] .container {
-	background-color: #222f3e;
-}
-
 .container textarea {
 	visibility: hidden;
 }
 
 .tox-tinymce {
 	margin: auto;
-	min-height: 100vh;
-	max-height: 100vh;
+	border: 0 !important;
+	border-radius: 0 !important;
+	max-width: calc(100vw - 10px);
+	min-height: calc(100vh - 5px);
+	max-height: calc(100vh - 5px);
 	border-color: transparent !important;
 }
 
-html[context="popup"] .tox-tinymce {
-  min-height: unset;
+.tox .tox-edit-area::before {
+	border-radius: 0 !important;
+	border-width: 1px !important;
 }
 
-div[class*="tox-statusbar"] {
-	font-size: 10px !important;
+.tox:not(.tox-tinymce-inline) .tox-editor-header {
+	box-shadow: none !important;
+	padding: 0 0 5px 0 !important;
+	border-bottom: solid 1px rgba(34, 47, 62, 0.1) !important;
+}
+
+.tox:not(.tox-tinymce-inline) .tox-editor-header:not(.tox-editor-dock-transition) {
+	transition: border-bottom 500ms !important;
+}
+
+div[class*='tox-statusbar'] {
+	font-size: 12px !important;
 }
 
 .toolbar {
@@ -63,22 +69,15 @@ div[class*="tox-statusbar"] {
   height: 34px;
   cursor: pointer;
   user-select: none;
-  text-align: center;
 	border-radius: 3px;
+  text-align: center;
 	transition: 300ms ease all;
 }
 
 .toolbar table tr td svg {
+	margin-top: -3px;
   pointer-events: none;
   vertical-align: middle;
-}
-
-html[theme='default'] .toolbar table tr td svg {
-	fill: #666666;
-}
-
-html[theme='dark'] .toolbar table tr td svg {
-	fill: #c1c1c1;
 }
 
 .toolbar table tr td:hover {
@@ -91,6 +90,36 @@ html[theme='dark'] .toolbar table tr td svg {
   }
 }
 
-html[context="webapp"] .toolbar {
+html[theme='default'] .container {
+	background-color: #fff;
+}
+
+html[theme='dark'] .container {
+	background-color: #222f3e;
+}
+
+
+html[theme='default'] .toolbar table tr td svg {
+	fill: #555;
+}
+
+html[theme='dark'] .toolbar table tr td svg {
+	fill: #c1c1c1;
+}
+
+html[theme='dark'] .tox:not(.tox-tinymce-inline) .tox-editor-header {
+	border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+html[context='popup'] body {
+  height: calc(100vh - 5px);
+}
+
+html[context='popup'] .tox-tinymce {
+  min-height: calc(100vh - 5px);
+  max-height: calc(100vh - 5px);
+}
+
+html[context='webapp'] .toolbar {
   display: none;
 }

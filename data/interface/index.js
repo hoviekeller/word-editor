@@ -11,11 +11,6 @@ var config = {
     "filename": ''
   },
   "menubar": "custom edit view insert format tools table help",
-  "plugins": `
-    advlist anchor autolink autoresize autosave bbcode charmap code codesample directionality emoticons fullpage 
-    fullscreen help hr image imagetools importcss insertdatetime legacyoutput link lists media nonbreaking noneditable 
-    pagebreak paste preview print save searchreplace tabfocus table template textpattern toc visualblocks visualchars wordcount   
-  `,
   "menu": {
     "custom": {
       "title": "File",
@@ -23,37 +18,69 @@ var config = {
     }
   },
   "toolbar": `
-    styleselect |
     sizeselect |
-    fontselect |
-    fontsizeselect |
+    fontfamily |
+    fontsizeinput |
     bold italic underline |
     forecolor backcolor |
     bullist numlist |
     alignleft aligncenter alignright alignjustify |
     outdent indent |
-    ltr rtl |
-    fullpage
+    ltr rtl
   `,
+  "plugins": `
+  accordion
+  advlist
+  anchor
+  autolink
+  autoresize
+  autosave
+  charmap
+  code
+  codesample
+  directionality
+  emoticons
+  fullscreen
+  help
+  image
+  importcss
+  insertdatetime
+  link
+  lists
+  media
+  nonbreaking
+  pagebreak
+  preview
+  quickbars
+  save
+  searchreplace
+  table
+  visualblocks
+  visualchars
+  wordcount
+`,
   "resize": {
     "timeout": null,
     "method": function () {
-      var context = document.documentElement.getAttribute("context");
-      if (context === "win") {
+      if (config.port.name === "win") {
         if (config.resize.timeout) window.clearTimeout(config.resize.timeout);
-        config.resize.timeout = window.setTimeout(function () {
+        config.resize.timeout = window.setTimeout(async function () {
+          const current = await chrome.windows.getCurrent();
+          /*  */
           config.storage.write("interface.size", {
-            "width": window.innerWidth || window.outerWidth,
-            "height": window.innerHeight || window.outerHeight
+            "top": current.top,
+            "left": current.left,
+            "width": current.width,
+            "height": current.height
           });
-        }, 300);
+        }, 1000);
       }
     }
   },
   "load": function () {
     config.storage.load(function () {
-      var theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "default";
-      var skin = window.matchMedia("(prefers-color-scheme: dark)").matches ? "oxide-dark" : "oxide";
+      const theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "default";
+      const skin = window.matchMedia("(prefers-color-scheme: dark)").matches ? "oxide-dark" : "oxide";
       /*  */
       config.interface.skin = config.storage.read("skin") !== undefined ? config.storage.read("skin") : skin;
       config.interface.theme = config.storage.read("theme") !== undefined ? config.storage.read("theme") : theme;
@@ -82,7 +109,7 @@ var config = {
     "write": function (id, data) {
       if (id) {
         if (data !== '' && data !== null && data !== undefined) {
-          var tmp = {};
+          let tmp = {};
           tmp[id] = data;
           config.storage.local[id] = data;
           chrome.storage.local.set(tmp, function () {});
@@ -95,16 +122,16 @@ var config = {
   },
   "app": {
     "start": function () {
-      var dark = document.getElementById("dark");
-      var reload = document.getElementById("reload");
-      var support = document.getElementById("support");
+      const dark = document.getElementById("dark");
+      const reload = document.getElementById("reload");
+      const support = document.getElementById("support");
       /*  */
       reload.addEventListener("click", function () {
         document.location.reload();
       }, false);
       /*  */
       support.addEventListener("click", function () {
-        var url = config.addon.homepage();
+        const url = config.addon.homepage();
         chrome.tabs.create({"url": url, "active": true});
       }, false);
       /*  */
@@ -126,7 +153,7 @@ var config = {
     "name": '',
     "connect": function () {
       config.port.name = "webapp";
-      var context = document.documentElement.getAttribute("context");
+      const context = document.documentElement.getAttribute("context");
       /*  */
       if (chrome.runtime) {
         if (chrome.runtime.connect) {
@@ -161,27 +188,20 @@ var config = {
       editor.on("change", config.interface.on.change);
       editor.on("execcommand", config.interface.on.execcommand);
     },
-    "update": function () {
-      if (config.interface.id) {
-        var settings = tinyMCE.activeEditor.settings;
-        /*  */
-        settings.skin = config.interface.skin;
-        settings.content_css = config.interface.theme;
-        /*  */
-        config.interface.initialize();
-        tinyMCE.init(settings);
-        /*  */
-        tinyMCE.execCommand("mceRemoveEditor", false, config.interface.id);
-        tinyMCE.execCommand("mceAddEditor", false, config.interface.id);
-      }
+    "update": async function () {
+      tinyMCE.execCommand("mceRemoveEditor", false, config.interface.id);
+      await config.interface.load();
     },
-    "load": function () {
+    "load": async function () {
       config.interface.initialize();
-      /*  */
       tinyMCE.baseURL = chrome.runtime.getURL("/data/interface/vendor/");
-      tinyMCE.init({
+      /*  */
+      await tinyMCE.init({
+        "width": "100vw",
         "theme": "silver",
         "branding": false,
+        "promotion": false,
+        "license_key": "gpl",
         "image_advtab": true,
         "relative_urls" : true,
         "selector": "textarea",
@@ -189,7 +209,6 @@ var config = {
         "plugins": config.plugins,
         "toolbar": config.toolbar,
         "menubar": config.menubar,
-        "width": "calc(100vw - 2px)",
         "save_enablewhendirty": true,
         "skin": config.interface.skin,
         "setup": config.interface.setup,
@@ -271,7 +290,7 @@ var config = {
           "icon": "darkmode",
           "text": "Dark Mode",
           "onAction": function () {
-            var dark = document.getElementById("dark");
+            const dark = document.getElementById("dark");
             if (dark) {
               dark.click();
             }
@@ -285,13 +304,13 @@ var config = {
       tinyMCE.activeEditor.execCommand("mceSave");
     },
     "reset": function () {
-      var flag = window.confirm("Are you sure you want to reset the editor content (to the last saved point)?");
+      const flag = window.confirm("Are you sure you want to reset the editor content (to the last saved point)?");
       if (flag) {
         tinyMCE.activeEditor.execCommand("mceCancel");
       }
     },
     "change": function () {      
-      var content = tinyMCE.activeEditor.getContent({"format": "raw"});
+      const content = tinyMCE.activeEditor.getContent({"format": "raw"});
       if (content) {
         config.download.content = content;
         /*  */
@@ -308,7 +327,7 @@ var config = {
             if (e.state.current === "complete")  {
               chrome.downloads.search({"id": e.id}, function (items) {
                 if (items && items.length) {
-                  var item = items[0];
+                  const item = items[0];
                   if (item) {
                     if (item.mime) {
                       if (item.mime.startsWith("text/")) {
@@ -336,7 +355,7 @@ var config = {
       },
       "image": function (blobInfo, success, failure) {
         if (blobInfo) {
-          var base64 = blobInfo.base64();
+          const base64 = blobInfo.base64();
           if (base64) {
             success("data:image/png;base64," + base64);
           } else {
@@ -347,18 +366,18 @@ var config = {
         }
       },
       "name": function () {
-        var path = config.download.filename;
+        const path = config.download.filename;
         /*  */
-        var a = path.lastIndexOf('/');
-        var b = path.lastIndexOf('\\');
-        var filename = path.substring(b >= 0 ? b : a);
-        var remove = filename.indexOf('\\') === 0 || filename.indexOf('/') === 0;
+        const a = path.lastIndexOf('/');
+        const b = path.lastIndexOf('\\');
+        const filename = path.substring(b >= 0 ? b : a);
+        const remove = filename.indexOf('\\') === 0 || filename.indexOf('/') === 0;
         /*  */
         config.download.filename = remove ? filename.substring(1) : filename;
         return config.download.filename;
       },
       "saveas": function () {
-        var option = {};
+        const option = {};
         option["saveAs"] = true;
         option["url"] = config.listener.fileio.url();
         /*  */
@@ -369,7 +388,7 @@ var config = {
       },
       "save": function () {
         if (config.download.filename) {
-          var option = {};
+          const option = {};
           option["conflictAction"] = "overwrite";
           option["url"] = config.listener.fileio.url();
           option["filename"] = config.listener.fileio.name();
@@ -385,10 +404,10 @@ var config = {
           config.download.type = file.type;
           config.download.filename = file.name;
           /*  */
-          var reader = new FileReader();
+          const reader = new FileReader();
           reader.readAsText(file);
           reader.onload = function (e) {
-            var content = e.target.result;
+            const content = e.target.result;
             if (content) {
               tinyMCE.activeEditor.setContent(content, {"format": "raw"});
               config.listener.change(2);
@@ -397,7 +416,7 @@ var config = {
         }
       },
       "open": function () {
-        var input = document.createElement("input");
+        const input = document.createElement("input");
         input.setAttribute("accept", "text/*");
         input.setAttribute("type", "file");
         input.click();
@@ -417,7 +436,7 @@ var config = {
         document.documentElement.addEventListener("drop", function (e) {e.preventDefault()});
         document.documentElement.addEventListener("dragover", function (e) {e.preventDefault()});
         /*  */
-        var container = config.editor.contentDocument;
+        const container = config.editor.contentDocument;
         container.addEventListener("dragover", function (e) {e.preventDefault()});
         container.addEventListener("drop", function (e) {
           e.preventDefault();
@@ -425,11 +444,11 @@ var config = {
           if (e.dataTransfer) {
             if (e.dataTransfer.items) {
               if (e.dataTransfer.items.length) {
-                for (var i = 0; i < e.dataTransfer.items.length; i++) {
-                  var item = e.dataTransfer.items[i];
+                for (let i = 0; i < e.dataTransfer.items.length; i++) {
+                  const item = e.dataTransfer.items[i];
                   if (item) {
                     if (item.webkitGetAsEntry !== undefined) {
-                      var entry = item.webkitGetAsEntry();
+                      const entry = item.webkitGetAsEntry();
                       if (entry) {
                         if (entry.isFile) {
                           entry.file(function (file) {
