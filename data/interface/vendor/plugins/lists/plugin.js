@@ -1,5 +1,5 @@
 /**
- * TinyMCE version 7.1.1 (2024-05-22)
+ * TinyMCE version 7.8.0 (TBD)
  */
 
 (function () {
@@ -269,7 +269,6 @@
     const lift2 = (oa, ob, f) => oa.isSome() && ob.isSome() ? Optional.some(f(oa.getOrDie(), ob.getOrDie())) : Optional.none();
 
     const COMMENT = 8;
-    const DOCUMENT = 9;
     const DOCUMENT_FRAGMENT = 11;
     const ELEMENT = 1;
     const TEXT = 3;
@@ -382,12 +381,9 @@
     const isHTMLElement = element => isElement$1(element) && isPrototypeOf(element.dom);
     const isElement$1 = isType(ELEMENT);
     const isText = isType(TEXT);
-    const isDocument = isType(DOCUMENT);
     const isDocumentFragment = isType(DOCUMENT_FRAGMENT);
     const isTag = tag => e => isElement$1(e) && name(e) === tag;
 
-    const owner = element => SugarElement.fromDom(element.dom.ownerDocument);
-    const documentOrOwner = dos => isDocument(dos) ? dos : owner(dos);
     const parent = element => Optional.from(element.dom.parentNode).map(SugarElement.fromDom);
     const parentElement = element => Optional.from(element.dom.parentElement).map(SugarElement.fromDom);
     const nextSibling = element => Optional.from(element.dom.nextSibling).map(SugarElement.fromDom);
@@ -400,8 +396,7 @@
     const lastChild = element => child(element, element.dom.childNodes.length - 1);
 
     const isShadowRoot = dos => isDocumentFragment(dos) && isNonNullable(dos.dom.host);
-    const supported = isFunction(Element.prototype.attachShadow) && isFunction(Node.prototype.getRootNode);
-    const getRootNode = supported ? e => SugarElement.fromDom(e.dom.getRootNode()) : documentOrOwner;
+    const getRootNode = e => SugarElement.fromDom(e.dom.getRootNode());
     const getShadowRoot = e => {
       const r = getRootNode(e);
       return isShadowRoot(r) ? Optional.some(r) : Optional.none();
@@ -841,11 +836,11 @@
     const isWithinNonEditable = (editor, element) => element !== null && !editor.dom.isEditable(element);
     const selectionIsWithinNonEditableList = editor => {
       const parentList = getParentList(editor);
-      return isWithinNonEditable(editor, parentList);
+      return isWithinNonEditable(editor, parentList) || !editor.selection.isEditable();
     };
     const isWithinNonEditableList = (editor, element) => {
       const parentList = editor.dom.getParent(element, 'ol,ul,dl');
-      return isWithinNonEditable(editor, parentList);
+      return isWithinNonEditable(editor, parentList) || !editor.selection.isEditable();
     };
     const setNodeChangeHandler = (editor, nodeChangeHandler) => {
       const initialNode = editor.selection.getNode();
@@ -1763,15 +1758,16 @@
           });
           return true;
         } else if (willMergeParentIntoChild && !isForward && otherLi !== li) {
+          const commonAncestorParent = rng.commonAncestorContainer.parentElement;
+          if (!commonAncestorParent || dom.isChildOf(otherLi, commonAncestorParent)) {
+            return false;
+          }
           editor.undoManager.transact(() => {
-            if (rng.commonAncestorContainer.parentElement) {
-              const bookmark = createBookmark(rng);
-              const oldParentElRef = rng.commonAncestorContainer.parentElement;
-              moveChildren(dom, rng.commonAncestorContainer.parentElement, otherLi);
-              oldParentElRef.remove();
-              const resolvedBookmark = resolveBookmark(bookmark);
-              editor.selection.setRng(resolvedBookmark);
-            }
+            const bookmark = createBookmark(rng);
+            moveChildren(dom, commonAncestorParent, otherLi);
+            commonAncestorParent.remove();
+            const resolvedBookmark = resolveBookmark(bookmark);
+            editor.selection.setRng(resolvedBookmark);
           });
           return true;
         } else if (!otherLi) {
@@ -1799,8 +1795,9 @@
       const block = dom.getParent(selectionStartElm, dom.isBlock, root);
       if (block && dom.isEmpty(block, undefined, { checkRootAsContent: true })) {
         const rng = normalizeRange(editor.selection.getRng());
-        const otherLi = dom.getParent(findNextCaretContainer(editor, rng, isForward, root), 'LI', root);
-        if (otherLi) {
+        const nextCaretContainer = findNextCaretContainer(editor, rng, isForward, root);
+        const otherLi = dom.getParent(nextCaretContainer, 'LI', root);
+        if (nextCaretContainer && otherLi) {
           const findValidElement = element => contains$1([
             'td',
             'th',
@@ -1816,7 +1813,7 @@
             const parentNode = otherLi.parentNode;
             removeBlock(dom, block, root);
             mergeWithAdjacentLists(dom, parentNode);
-            editor.selection.select(otherLi, true);
+            editor.selection.select(nextCaretContainer, true);
             editor.selection.collapse(isForward);
           });
           return true;
@@ -1836,7 +1833,14 @@
     const backspaceDeleteRange = editor => {
       if (hasListSelection(editor)) {
         editor.undoManager.transact(() => {
+          let shouldFireInput = true;
+          const inputHandler = () => shouldFireInput = false;
+          editor.on('input', inputHandler);
           editor.execCommand('Delete');
+          editor.off('input', inputHandler);
+          if (shouldFireInput) {
+            editor.dispatch('input');
+          }
           normalizeLists(editor.dom, editor.getBody());
         });
         return true;

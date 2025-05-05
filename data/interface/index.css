@@ -94,17 +94,20 @@ html[theme='default'] .container {
 	background-color: #fff;
 }
 
-html[theme='dark'] .container {
-	background-color: #222f3e;
-}
-
-
 html[theme='default'] .toolbar table tr td svg {
 	fill: #555;
 }
 
+html[theme='dark'] .container {
+	background-color: #222f3e;
+}
+
 html[theme='dark'] .toolbar table tr td svg {
 	fill: #c1c1c1;
+}
+
+html[theme='dark'] .toolbar table tr td:hover {
+  background-color: #2f4055;
 }
 
 html[theme='dark'] .tox:not(.tox-tinymce-inline) .tox-editor-header {

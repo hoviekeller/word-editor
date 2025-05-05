@@ -1,5 +1,5 @@
 /**
- * TinyMCE version 7.1.1 (2024-05-22)
+ * TinyMCE version 7.8.0 (TBD)
  */
 
 (function () {
@@ -749,16 +749,15 @@
     });
 
     const isShadowRoot = dos => isDocumentFragment(dos) && isNonNullable(dos.dom.host);
-    const supported = isFunction(Element.prototype.attachShadow) && isFunction(Node.prototype.getRootNode);
-    const isSupported$1 = constant(supported);
-    const getRootNode = supported ? e => SugarElement.fromDom(e.dom.getRootNode()) : documentOrOwner;
+    const getRootNode = e => SugarElement.fromDom(e.dom.getRootNode());
+    const getContentContainer = dos => isShadowRoot(dos) ? dos : SugarElement.fromDom(documentOrOwner(dos).dom.body);
     const getShadowRoot = e => {
       const r = getRootNode(e);
       return isShadowRoot(r) ? Optional.some(r) : Optional.none();
     };
     const getShadowHost = e => SugarElement.fromDom(e.dom.host);
     const getOriginalEventTarget = event => {
-      if (isSupported$1() && isNonNullable(event.target)) {
+      if (isNonNullable(event.target)) {
         const el = SugarElement.fromDom(event.target);
         if (isElement(el) && isOpenShadowHost(el)) {
           if (event.composed && event.composedPath) {
@@ -1371,7 +1370,7 @@
     const PlatformDetection = { detect: detect$3 };
 
     const mediaMatch = query => window.matchMedia(query).matches;
-    let platform = cached(() => PlatformDetection.detect(navigator.userAgent, Optional.from(navigator.userAgentData), mediaMatch));
+    let platform = cached(() => PlatformDetection.detect(window.navigator.userAgent, Optional.from(window.navigator.userAgentData), mediaMatch));
     const detect$2 = () => platform();
 
     const Dimension = (name, getOffset) => {
@@ -1513,7 +1512,7 @@
       });
       return columnsGroup;
     };
-    const generate$1 = list => {
+    const generate$2 = list => {
       const access = {};
       const cells = [];
       const tableOpt = head(list).map(rowData => rowData.element).bind(table);
@@ -1571,7 +1570,7 @@
     };
     const fromTable = table => {
       const list = fromTable$1(table);
-      return generate$1(list);
+      return generate$2(list);
     };
     const justCells = warehouse => bind$2(warehouse.all, w => w.cells);
     const justColumns = warehouse => values(warehouse.columns);
@@ -1579,7 +1578,7 @@
     const getColumnAt = (warehouse, columnIndex) => Optional.from(warehouse.columns[columnIndex]);
     const Warehouse = {
       fromTable,
-      generate: generate$1,
+      generate: generate$2,
       getAt,
       findItem,
       filterItems,
@@ -2500,6 +2499,26 @@
       return options.isSet('table_default_styles') ? defaultStyles : determineDefaultTableStyles(editor, defaultStyles);
     };
     const tableUseColumnGroup = option('table_use_colgroups');
+    const fixedContainerSelector = option('fixed_toolbar_container');
+    const fixedToolbarContainerTarget = option('fixed_toolbar_container_target');
+    const fixedContainerTarget = editor => {
+      var _a;
+      if (!editor.inline) {
+        return Optional.none();
+      }
+      const selector = (_a = fixedContainerSelector(editor)) !== null && _a !== void 0 ? _a : '';
+      if (selector.length > 0) {
+        return descendant(body$1(), selector);
+      }
+      const element = fixedToolbarContainerTarget(editor);
+      if (isNonNullable(element)) {
+        return Optional.some(SugarElement.fromDom(element));
+      }
+      return Optional.none();
+    };
+    const useFixedContainer = editor => editor.inline && fixedContainerTarget(editor).isSome();
+    const getUiMode = option('ui_mode');
+    const isSplitUiMode = editor => !useFixedContainer(editor) && getUiMode(editor) === 'split';
 
     const closest = target => closest$1(target, '[contenteditable]');
     const isEditable$1 = (element, assumeEditable = false) => {
@@ -3026,13 +3045,32 @@
       });
     };
     const serializeElements = (editor, elements) => map$1(elements, elm => editor.selection.serializer.serialize(elm.dom, {})).join('');
-    const getTextContent = elements => map$1(elements, element => element.dom.innerText).join('');
+    const getTextContent = (editor, replicaElements) => {
+      const doc = editor.getDoc();
+      const dos = getRootNode(SugarElement.fromDom(editor.getBody()));
+      const offscreenDiv = SugarElement.fromTag('div', doc);
+      set$2(offscreenDiv, 'data-mce-bogus', 'all');
+      setAll(offscreenDiv, {
+        position: 'fixed',
+        left: '-9999999px',
+        top: '0',
+        overflow: 'hidden',
+        opacity: '0'
+      });
+      const root = getContentContainer(dos);
+      append(offscreenDiv, replicaElements);
+      append$1(root, offscreenDiv);
+      const textContent = offscreenDiv.dom.innerText;
+      remove$6(offscreenDiv);
+      return textContent;
+    };
     const registerEvents = (editor, actions) => {
       editor.on('BeforeGetContent', e => {
         const multiCellContext = cells => {
           e.preventDefault();
-          extractSelected(cells).each(elements => {
-            e.content = e.format === 'text' ? getTextContent(elements) : serializeElements(editor, elements);
+          extractSelected(cells).each(replicaElements => {
+            const content = e.format === 'text' ? getTextContent(editor, replicaElements) : serializeElements(editor, replicaElements);
+            e.content = content;
           });
         };
         if (e.selection === true) {
@@ -4025,7 +4063,7 @@
       return replaceIn(grid, targetCells, comparator, substitution, replace, Optional.none, always);
     };
 
-    const generate = cases => {
+    const generate$1 = cases => {
       if (!isArray(cases)) {
         throw new Error('cases must be an array');
       }
@@ -4088,7 +4126,7 @@
       });
       return adt;
     };
-    const Adt = { generate };
+    const Adt = { generate: generate$1 };
 
     const adt$6 = Adt.generate([
       { none: [] },
@@ -4710,9 +4748,9 @@
     const eraseRows = run(opEraseRows, onCells, noop, prune, Generators.modification);
     const makeColumnsHeader = run(opMakeColumnsHeader, onUnlockedCells, noop, noop, headerCellGenerator);
     const unmakeColumnsHeader = run(opUnmakeColumnsHeader, onUnlockedCells, noop, noop, bodyCellGenerator);
-    const makeRowsHeader = run(opMakeRowsHeader, onUnlockedCells, noop, noop, headerCellGenerator);
-    const makeRowsBody = run(opMakeRowsBody, onUnlockedCells, noop, noop, bodyCellGenerator);
-    const makeRowsFooter = run(opMakeRowsFooter, onUnlockedCells, noop, noop, bodyCellGenerator);
+    const makeRowsHeader = run(opMakeRowsHeader, onCells, noop, noop, headerCellGenerator);
+    const makeRowsBody = run(opMakeRowsBody, onCells, noop, noop, bodyCellGenerator);
+    const makeRowsFooter = run(opMakeRowsFooter, onCells, noop, noop, bodyCellGenerator);
     const makeCellsHeader = run(opMakeCellsHeader, onUnlockedCells, noop, noop, headerCellGenerator);
     const unmakeCellsHeader = run(opUnmakeCellsHeader, onUnlockedCells, noop, noop, bodyCellGenerator);
     const mergeCells = run(opMergeCells, onUnlockedMergable, resize, noop, Generators.merging);
@@ -6318,7 +6356,6 @@
                 const isCellClosestContentEditable = is(closest(event.target), singleCell, eq$1);
                 if (isNonEditableCell && isCellClosestContentEditable) {
                   annotations.selectRange(container, boxes, singleCell, singleCell);
-                  bridge.selectContents(singleCell);
                 }
               } else if (boxes.length > 1) {
                 annotations.selectRange(container, boxes, cellSel.start, cellSel.finish);
@@ -6436,32 +6473,32 @@
     };
 
     const caretPositionFromPoint = (doc, x, y) => {
-      var _a, _b;
-      return Optional.from((_b = (_a = doc.dom).caretPositionFromPoint) === null || _b === void 0 ? void 0 : _b.call(_a, x, y)).bind(pos => {
+      var _a;
+      return Optional.from((_a = doc.caretPositionFromPoint) === null || _a === void 0 ? void 0 : _a.call(doc, x, y)).bind(pos => {
         if (pos.offsetNode === null) {
           return Optional.none();
         }
-        const r = doc.dom.createRange();
+        const r = doc.createRange();
         r.setStart(pos.offsetNode, pos.offset);
         r.collapse();
         return Optional.some(r);
       });
     };
     const caretRangeFromPoint = (doc, x, y) => {
-      var _a, _b;
-      return Optional.from((_b = (_a = doc.dom).caretRangeFromPoint) === null || _b === void 0 ? void 0 : _b.call(_a, x, y));
+      var _a;
+      return Optional.from((_a = doc.caretRangeFromPoint) === null || _a === void 0 ? void 0 : _a.call(doc, x, y));
     };
-    const availableSearch = (() => {
-      if (document.caretPositionFromPoint) {
-        return caretPositionFromPoint;
-      } else if (document.caretRangeFromPoint) {
-        return caretRangeFromPoint;
+    const availableSearch = (doc, x, y) => {
+      if (doc.caretPositionFromPoint) {
+        return caretPositionFromPoint(doc, x, y);
+      } else if (doc.caretRangeFromPoint) {
+        return caretRangeFromPoint(doc, x, y);
       } else {
-        return Optional.none;
+        return Optional.none();
       }
-    })();
+    };
     const fromPoint = (win, x, y) => {
-      const doc = SugarElement.fromDom(win.document);
+      const doc = win.document;
       return availableSearch(doc, x, y).map(rng => SimRange.create(SugarElement.fromDom(rng.startContainer), rng.startOffset, SugarElement.fromDom(rng.endContainer), rng.endOffset));
     };
 
@@ -6528,7 +6565,7 @@
           } else if (selection.extend) {
             try {
               setLegacyRtlRange(win, selection, start, soffset, finish, foffset);
-            } catch (e) {
+            } catch (_a) {
               doSetRange(win, finish, foffset, start, soffset);
             }
           } else {
@@ -7712,7 +7749,7 @@
         set$2(target, 'data-initial-' + dir, getCssValue(target, dir));
         add(target, resizeBarDragging);
         set$1(target, 'opacity', '0.2');
-        resizing.go(wire.parent());
+        resizing.go(wire.dragContainer());
       };
       const mousedown = bind(wire.parent(), 'mousedown', event => {
         if (isRowBar(event.target)) {
@@ -7816,11 +7853,23 @@
     };
     const TableResize = { create };
 
+    const random = () => window.crypto.getRandomValues(new Uint32Array(1))[0] / 4294967295;
+
+    let unique = 0;
+    const generate = prefix => {
+      const date = new Date();
+      const time = date.getTime();
+      const random$1 = Math.floor(random() * 1000000000);
+      unique++;
+      return prefix + '_' + random$1 + unique + String(time);
+    };
+
     const only = (element, isResizable) => {
       const parent = isDocument(element) ? documentElement(element) : element;
       return {
         parent: constant(parent),
         view: constant(element),
+        dragContainer: constant(parent),
         origin: constant(SugarPosition(0, 0)),
         isResizable
       };
@@ -7830,6 +7879,7 @@
       return {
         parent: constant(chrome),
         view: constant(editable),
+        dragContainer: constant(chrome),
         origin,
         isResizable
       };
@@ -7838,31 +7888,58 @@
       return {
         parent: constant(chrome),
         view: constant(editable),
+        dragContainer: constant(chrome),
         origin: constant(SugarPosition(0, 0)),
+        isResizable
+      };
+    };
+    const scrollable = (editable, chrome, dragContainer, isResizable) => {
+      return {
+        parent: constant(chrome),
+        view: constant(editable),
+        dragContainer: constant(dragContainer),
+        origin: () => absolute(chrome),
         isResizable
       };
     };
     const ResizeWire = {
       only,
       detached,
-      body
+      body,
+      scrollable
     };
 
-    const createContainer = () => {
+    const createContainer = position => {
+      const id = generate('resizer-container');
       const container = SugarElement.fromTag('div');
+      set$2(container, 'id', id);
       setAll(container, {
-        position: 'static',
+        position,
         height: '0',
         width: '0',
         padding: '0',
         margin: '0',
         border: '0'
       });
-      append$1(body$1(), container);
       return container;
     };
+    const getInlineResizeWire = (editor, isResizable) => {
+      const isSplitUiMode$1 = isSplitUiMode(editor);
+      const editorBody = SugarElement.fromDom(editor.getBody());
+      const container = createContainer(isSplitUiMode$1 ? 'relative' : 'static');
+      const body = body$1();
+      if (isSplitUiMode$1) {
+        after$5(editorBody, container);
+        return ResizeWire.scrollable(editorBody, container, body, isResizable);
+      }
+      append$1(body, container);
+      return ResizeWire.body(editorBody, container, isResizable);
+    };
     const get = (editor, isResizable) => {
-      return editor.inline ? ResizeWire.body(SugarElement.fromDom(editor.getBody()), createContainer(), isResizable) : ResizeWire.only(SugarElement.fromDom(editor.getDoc()), isResizable);
+      if (editor.inline) {
+        return getInlineResizeWire(editor, isResizable);
+      }
+      return ResizeWire.only(SugarElement.fromDom(editor.getDoc()), isResizable);
     };
     const remove = (editor, wire) => {
       if (editor.inline) {
@@ -7941,7 +8018,9 @@
         if (hasTableObjectResizing(editor) && hasTableResizeBars(editor)) {
           const resizing = lazyResizingBehaviour();
           const sz = TableResize.create(rawWire, resizing, lazySizing);
-          sz.on();
+          if (!editor.mode.isReadOnly()) {
+            sz.on();
+          }
           sz.events.startDrag.bind(_event => {
             selectionRng.set(editor.selection.getRng());
           });
@@ -7965,7 +8044,7 @@
       });
       editor.on('ObjectResizeStart', e => {
         const targetElm = e.target;
-        if (isTable(targetElm)) {
+        if (isTable(targetElm) && !editor.mode.isReadOnly()) {
           const table = SugarElement.fromDom(targetElm);
           each$2(editor.dom.select('.mce-clonedresizable'), clone => {
             editor.dom.addClass(clone, 'mce-' + getTableColumnResizingBehaviour(editor) + '-columns');
@@ -7996,25 +8075,26 @@
           fireTableModified(editor, table.dom, styleModified);
         }
       });
-      editor.on('SwitchMode', () => {
+      const showResizeBars = () => {
         tableResize.on(resize => {
-          if (editor.mode.isReadOnly()) {
-            resize.hideBars();
-          } else {
-            resize.showBars();
-          }
+          resize.on();
+          resize.showBars();
         });
+      };
+      const hideResizeBars = () => {
+        tableResize.on(resize => {
+          resize.off();
+          resize.hideBars();
+        });
+      };
+      editor.on('DisabledStateChange', e => {
+        e.state ? hideResizeBars() : showResizeBars();
+      });
+      editor.on('SwitchMode', () => {
+        editor.mode.isReadOnly() ? hideResizeBars() : showResizeBars();
       });
       editor.on('dragstart dragend', e => {
-        tableResize.on(resize => {
-          if (e.type === 'dragstart') {
-            resize.hideBars();
-            resize.off();
-          } else {
-            resize.on();
-            resize.showBars();
-          }
-        });
+        e.type === 'dragstart' ? hideResizeBars() : showResizeBars();
       });
       editor.on('remove', () => {
         destroy();

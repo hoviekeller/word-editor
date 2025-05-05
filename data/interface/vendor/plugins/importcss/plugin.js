@@ -1,5 +1,5 @@
 /**
- * TinyMCE version 7.1.1 (2024-05-22)
+ * TinyMCE version 7.8.0 (TBD)
  */
 
 (function () {
@@ -175,7 +175,7 @@
         });
         try {
           rules = styleSheet.cssRules || styleSheet.rules;
-        } catch (e) {
+        } catch (_a) {
         }
         global.each(rules, cssRule => {
           if (isCssImportRule(cssRule) && cssRule.styleSheet) {
@@ -199,7 +199,7 @@
         global.each(doc.styleSheets, styleSheet => {
           append(styleSheet);
         });
-      } catch (e) {
+      } catch (_a) {
       }
       return selectors;
     };
